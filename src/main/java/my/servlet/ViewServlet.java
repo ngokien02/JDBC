@@ -9,6 +9,7 @@ import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -19,8 +20,7 @@ import my.model.DataConnect;
  *
  * @author Admin
  */
-
-public class SaveServlet extends HttpServlet {
+public class ViewServlet extends HttpServlet {
 
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
@@ -35,45 +35,57 @@ public class SaveServlet extends HttpServlet {
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
         try (PrintWriter out = response.getWriter()) {
-            String username = request.getParameter("username");
-            String password = request.getParameter("password");
-            String email = request.getParameter("email");
-            String country = request.getParameter("country");
+
             Connection conn = null;
             PreparedStatement ps = null;
+            ResultSet rs = null;
+            String data = "";
             try {
                 conn = DataConnect.connect();
-                
-                ps = conn.prepareStatement("insert into users(name,password,email,country) values(?,?,?,?)");
-                ps.setString(1, username);
-                ps.setString(2, password);
-                ps.setString(3, email);
-                ps.setString(4, country);
-                
-                int kq = ps.executeUpdate();
-                if (kq > 0) {
-                    out.println("Thêm user thành công");
-                } else {
-                    out.println("Thêm user thất bại");
+
+                ps = conn.prepareStatement("select * from users");
+
+                rs = ps.executeQuery();
+                data += "<table border=\"1\" cellspacing=\"0\" cellpadding = \"5\" >"
+                        + "<tr>"
+                        + "<th>Id</th>"
+                        + "<th>Name</th>"
+                        + "<th>Password</th>"
+                        + "<th>Email</th>"
+                        + "<th>Country</th>"
+                        + "<th>Edit</th>"
+                        + "<th>Delete</th>"
+                        + "</tr>";
+                while (rs.next()) {
+                    data += "<tr>"
+                            + "<td>" + rs.getInt(1) + "</td>"
+                            + "<td>" + rs.getString(2) + "</td>"
+                            + "<td>" + rs.getString(3) + "</td>"
+                            + "<td>" + rs.getString(4) + "</td>"
+                            + "<td>" + rs.getString(5) + "</td>"
+                            + "<td><a href=EditServlet?id=" + rs.getInt(1) + ">Edit</a></td>"
+                            + "<td><a href=DeleteServlet?id=" + rs.getInt(1) + " onclick=\"return confirm('Are you sure?')\">Delete</a></td>"
+                            + "</tr>";
                 }
+                data += "</table>";
                 conn.close();
             } catch (Exception e) {
                 out.println("Loi" + e.toString());
-                out.print("Thêm user thất bại");
             }
-            request.getRequestDispatcher("index.html").include(request, response);
-        }
-        try (PrintWriter out = response.getWriter()) {
+//                request.getRequestDispatcher("index.html").include(request, response);
+
             /* TODO output your page here. You may use following sample code. */
             out.println("<!DOCTYPE html>");
             out.println("<html>");
             out.println("<head>");
-            out.println("<title>Servlet SaveServlet</title>");
+            out.println("<title>Servlet ViewServlet</title>");
             out.println("</head>");
-            out.println("<body>");
-            out.println("<h1>Servlet SaveServlet at " + request.getContextPath() + "</h1>");
-            out.println("</body>");
+            out.println("<body>"
+                    + "<h1>Users list</h1>" + data);
+            out.println("<a href=\"index.html\">Add new user</a>"
+                    + "</body>");
             out.println("</html>");
+
         }
     }
 
